@@ -183,10 +183,10 @@ uint32_t reg_data;
 ```
 ## 3. How to cause each Fault and check saved Fault data in BACKUP RAM
 This is "BluePill-Fault-Test.ino" tested on Arduino IDE 1.8.8 + Arduino_STM32.
-- Force cause Fault from Arduino side application soft.
-- When Fault occur, save registers to BACKUP RAM automatic.
-- If possible, at Arduino side application such as interrupt routine would revive and continue.
-- If impossible, at Arduino side application such as main routine would stop, only BUILTIN LED would blink fade or counted blink mode at endless for indicate Fault occur. 
+- Force cause Fault from Arduino side application.
+- When Fault occur, CPU save registers to BACKUP RAM at automatic.
+- If possible, Arduino side application such as interrupt routine would revive and continue.
+- If impossible, Arduino side application such as main routine would stop, only BUILTIN_LED would blink at fade or counted blink mode endless for indicate Fault occur. 
 - For recover, it need manual hardware reset or such as automatic WWDG reset.
 - At startup from reset/reboot after Fault occur, read BACKUP RAM and output them to Serial line.
 - The detection of Fault cause is not sure. So, you must check saved registers data and enusre Fault cause.
