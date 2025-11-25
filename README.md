@@ -36,7 +36,7 @@ We store them to BACKUP RAM and check after next reset/reboot.
 Description
 - Use 10 BACKUP RAM from end according to BKP_NR_DATA_REGS.
 - Direct RTC register access.\
-Unfortunately, Arduino_STM32 RTC library cann't include/call.
+Unfortunately, Arduino_STM32 RTC library can't include/call.
 - Pack HFSR due to BACKUP RAM shortage.
 
 `C:\Program Files (x86)\Arduino188\hardware\Arduino_STM32\STM32F1\cores\maple\libmaple\util.c`
