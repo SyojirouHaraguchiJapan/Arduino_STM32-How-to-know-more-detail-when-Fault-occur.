@@ -32,3 +32,151 @@ We store them to BACKUP RAM and check after next reset/reboot.
 - Let us save them into BACKUP RAM in RTC for after reset/reboot.
 - BACKUP RAM is built-in for allmost all STM32 device
 - And also occur time is important, save with too. 
+
+- Use 10 BACKUP RAM from end according to BKP_NR_DATA_REGS.
+- Direct RTC register access.\
+Unfortunately, Arduino_STM32 RTC library cann't include/call.
+- Pack HFSR due to BACKUP RAM shortage.
+
+`C:\Program Files (x86)\Arduino188\hardware\Arduino_STM32\STM32F1\cores\maple\libmaple\util.c`
+```
+#define USE_BACKUP_RAM
+  :
+/* This was public as of v0.0.12, so we've got to keep it public. */
+/**
+ * @brief Fades the error LED on and off
+ * @sideeffect Sets output push-pull on ERROR_LED_PIN.
+ */
+__attribute__((noreturn)) void throb(void) {
+
+#ifdef HAVE_ERROR_LED
+    int32  slope   = 1;
+    uint32 CC      = 0x0000;
+    uint32 TOP_CNT = 0x0200;
+    uint32 i       = 0;
+
+  #ifdef USE_COUNTED_BLINK
+    uint32 j;
+    uint32 cause;
+    asm volatile (
+        "mov %0, r0"   // assembly instruction: move r0 value to opernd 0 (%0)
+        : "=r" (cause) // output operand: C variable cause
+        :              // input  operand: none
+        : "r0"         // may destroy register
+    );
+  #endif
+
+  #ifdef USE_BACKUP_RAM
+typedef struct rtc_reg_map {
+    __IO uint32 CRH;        /**< Control register high */
+    __IO uint32 CRL;        /**< Control register high */
+    __IO uint32 PRLH;       /**< Prescaler load register high */
+    __IO uint32 PRLL;       /**< Prescaler load register low */
+    __IO uint32 DIVH;       /**< Prescaler divider register high */
+    __IO uint32 DIVL;       /**< Prescaler divider register low */
+    __IO uint32 CNTH;       /**< Counter register high */
+    __IO uint32 CNTL;       /**< Counter register low */
+    __IO uint32 ALRH;       /**< Alarm register high */
+    __IO uint32 ALRL;       /**< Alarm register low */
+} rtc_reg_map;
+
+#define RTC_BASE            ((struct rtc_reg_map*)0x40002800)
+#define RTC_FLAG_RTOFF      (uint32_t) 0x00000020
+#define RTC_FLAG_CNF        (uint32_t) 0x00000010
+#define RTC_FLAG_RSF        (uint32_t) 0x00000008
+
+    /* get unix time from RTC register by direct access */
+    // rtc_clear_sync()
+    while (RTC_BASE->CRL & RTC_FLAG_RTOFF == 0);    // wait until previous write complete
+    RTC_BASE->CRL &= ~RTC_FLAG_RSF;                 // clear reg sync flag
+    // rtc_wait_sync()
+    while((RTC_BASE->CRL & RTC_FLAG_RSF) == 0);     // wait until sync
+    // rtc_wait_finished()
+    while (RTC_BASE->CRL & RTC_FLAG_RTOFF == 0);    // wait until previous write complete
+    uint32 h, l;
+    do {
+        h = RTC_BASE->CNTH & 0xffff;
+        l = RTC_BASE->CNTL & 0xffff;
+    } while (h != (RTC_BASE->CNTH & 0xffff));
+
+uint16_t bkp_end = BKP_NR_DATA_REGS;
+
+    bkp_enable_writes();
+
+    bkp_write(bkp_end-10, (uint16_t) cause);    // Fault cause number
+
+uint32_t reg_data;
+    reg_data = SCB_BASE->CFSR;
+    bkp_write(bkp_end-9, (uint16_t) (reg_data >> 16));
+    bkp_write(bkp_end-8, (uint16_t) (reg_data & 0xFFFF));
+
+    //reg_data = SCB_BASE->HFSR;
+    //bkp_write(bkp_end-8, (uint16_t) (reg_data >> 16));
+    //bkp_write(bkp_end-7, (uint16_t) (reg_data & 0xFFFF));
+    reg_data = ((SCB_BASE->HFSR >> 16) & 0xC000) | (SCB_BASE->HFSR & 0x0002);
+    bkp_write(bkp_end-7, (uint16_t) reg_data);
+
+    reg_data = SCB_BASE->MMFAR;
+    bkp_write(bkp_end-6, (uint16_t) (reg_data >> 16));
+    bkp_write(bkp_end-5, (uint16_t) (reg_data & 0xFFFF));
+
+    reg_data = SCB_BASE->BFAR;
+    bkp_write(bkp_end-4, (uint16_t) (reg_data >> 16));
+    bkp_write(bkp_end-3, (uint16_t) (reg_data & 0xFFFF));
+
+    bkp_write(bkp_end-2, (uint16_t) h);
+    bkp_write(bkp_end-1, (uint16_t) l);
+
+    bkp_disable_writes();
+  #endif
+
+    gpio_set_mode(ERROR_LED_PORT, ERROR_LED_PIN, GPIO_MODE_OUTPUT);
+
+  #ifdef USE_COUNTED_BLINK
+    /* Error blink */
+    cause &= 0x07;     // limit max 7
+    if (cause > 5 || cause < 1) {
+        cause = 6;
+    }
+    while(1) {
+        for(j=0; j<cause; j++) {
+            gpio_write_bit(ERROR_LED_PORT, ERROR_LED_PIN, 0);   // LED ON
+            i=DELAY_COUNT; while (i>0) {int k = sqrt(i); i--; }
+            gpio_write_bit(ERROR_LED_PORT, ERROR_LED_PIN, 1);   // LED OFF
+            i=DELAY_COUNT; while (i>0) {int k = sqrt(i); i--; }
+        }
+        for (j=cause; j<7; j++) {
+            gpio_write_bit(ERROR_LED_PORT, ERROR_LED_PIN, 1);   // LED OFF
+            i=DELAY_COUNT; while (i>0) {int k = sqrt(i); i--; }
+            i=DELAY_COUNT; while (i>0) {int k = sqrt(i); i--; }
+        }
+    }
+  #else 
+    /* Error fade. */
+    while (1) {
+        if (CC == TOP_CNT)  {
+            slope = -1;
+        } else if (CC == 0) {
+            slope = 1;
+        }
+
+        if (i == TOP_CNT)  {
+            CC += slope;
+            i = 0;
+        }
+
+        if (i < CC) {
+            gpio_write_bit(ERROR_LED_PORT, ERROR_LED_PIN, 1);
+        } else {
+            gpio_write_bit(ERROR_LED_PORT, ERROR_LED_PIN, 0);
+        }
+        i++;
+    }
+  #endif
+#else
+    /* No error LED is defined; do nothing. */
+    while (1)
+        ;
+#endif
+}
+```
