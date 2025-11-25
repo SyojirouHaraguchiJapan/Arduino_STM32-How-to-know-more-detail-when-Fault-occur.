@@ -1,4 +1,4 @@
-# Arduino_STM32 How to know more detail when Fault occur.
+# Arduino_STM32 How to know more detail at Fault occur.
 ## 1. Additional control and data register
  For distribute Fault processing by cause,  there is special registers as below.
 - 4.4.9 System handler control and state register (SCB_SHCSR) at p140-141 of PM0056.
@@ -8,7 +8,7 @@
 - 4.4.13 Bus fault address register (SCB_BFAR) at p147 of RM0056.
 And notice
 - 4.4.14 System control block design hints and tips. at p148 of RM0056.
-- 4.4.15 SCB register map. at p148 of RM0056
+- 4.4.15 SCB register map. at p148 of RM0056\
 For STM32F1 0xE000 ED00, but for STM32L and STM32F2 0xE000 E008. 
 ## 2. How to check these resisters contents
 We store them to BACKUP RAM and check after next reset/reboot.
