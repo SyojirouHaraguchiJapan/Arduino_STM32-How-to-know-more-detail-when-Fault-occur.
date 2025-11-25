@@ -3,13 +3,13 @@
  For distribute Fault processing by cause,  there is special registers as below.
 
 Registers
-- 4.4.9 System handler control and state register (SCB_SHCSR) at p140-141 of PM0056.
-Partial list\
+- 4.4.9 System handler control and state register (SCB_SHCSR) at p140-141 of PM0056.\
+Partial list
   - Bit 18 USGFAULTENA: Usage fault enable bit, set to 1 to enable.
   - Bit 17 BUSFAULTENA: Bus fault enable bit, set to 1 to enable.
   - Bit 16 MEMFAULTENA: Memory management fault enable bit, set to 1 to enable. 
-- 4.4.10 Configurable fault status register (SCB_CFSR) at p142-145 of PM0056. 
-Partial list\
+- 4.4.10 Configurable fault status register (SCB_CFSR) at p142-145 of PM0056. \
+Partial list
   - Bit 16 UNDEFINSTR: Undefined instruction usage fault.
   - Bit 15 BFARVALID:  Bus Fault Address Register (BFAR) valid.
   - Bit  9 PRECISERR:  Precise data bus error.
