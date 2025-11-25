@@ -182,6 +182,7 @@ uint32_t reg_data;
 }
 ```
 #3. How to cause each Fault and check saved Fault data in BACKUP RAM
+This is "BluePill-Fault-Test.ino" tested on Arduino IDE 1.8.8 + Arduino_STM32.
 - Force cause Fault from Arduino side application soft.
 - When Fault occur, save registers to BACKUP RAM automatic.
 - If possible, at Arduino side application such as interrupt routine would revive and continue.
@@ -213,7 +214,7 @@ void setup() {
 
     Serial.begin(9600);
     while (!Serial) { delay(100); }
-    Serial.println("BluePill-Fault-Test2-251009b");
+    Serial.println("BluePill-Fault-Test");
     // Enable bits for cause individual fault
     SCB_BASE->SHCSR |= 0x00070000;       // USGA/BUS/MEM FAULT ENAble. See PM0056 4.4.9
 
